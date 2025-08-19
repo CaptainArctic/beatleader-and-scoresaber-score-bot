@@ -1,6 +1,6 @@
 # Overview
 
-This is a discord bot for tracking the scores of specified users on the BeatLeader board and posting embed messages in the specified channel.
+This is a discord bot for tracking the scores of specified users on BeatLeaderand Scoresaber boards and posting embed messages in the specified channel.
 
 The score will be published when one of the conditions is met:
 
@@ -37,7 +37,7 @@ This bot runs on [node.js](https://nodejs.org).
 5. Run `node .` to run the bot!
 
 # About country monitoring:
-
+BL board only!
 By default, monitoring of the top 50 players from the CIS countries is set. Monitoring is disabled. 
 
 Important variables:
