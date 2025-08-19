@@ -262,7 +262,7 @@ client.on('interactionCreate', async interaction => {
                     if (PlayersDataText[i].userID == userID && PlayersDataText[i].platform == platform) {
                         await interaction.reply({ content: `That account is already linked for ${platform}!`, ephemeral: true });
                         cancelProcess = true;
-                        break; // Выходим из цикла, если нашли совпадение
+                        break;
                     }
                 }    
             }
@@ -355,7 +355,7 @@ client.on('interactionCreate', async interaction => {
             if (PlayersDataText[i].userID === userID && PlayersDataText[i].platform === platform) {
                 userExists = true;
                 userIndex = i;
-                break; // Выходим из цикла, как только нашли совпадение
+                break;
             }
         }
     }
