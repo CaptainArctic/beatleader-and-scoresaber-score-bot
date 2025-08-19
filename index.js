@@ -19,10 +19,10 @@ const POST_RANK_100 = 100;
 const WEIGHT_TOP_8 = 0.77;
 const WEIGHT_TOP_20 = 0.5;
 
-// CIS TOP 50 players
-const ENABLE_COUNTRY_RANKCHANGE_MON = false;
-const RANK_TOP = 50;
-const RANK_TOP_COUNTRIES = "AM%2CAZ%2CBY%2CKG%2CKZ%2CMD%2CRU%2CTJ%2CUA%2CUZ";
+// CIS TOP 100 players
+const ENABLE_COUNTRY_RANKCHANGE_MON = true;
+const RANK_TOP = 100;
+const RANK_TOP_COUNTRIES = "AM%2CAZ%2CBY%2CKG%2CKZ%2CMD%2CRU%2CTJ%2CUA%2CUZ%2CEE";
 const NAME_RANK_TOP = 'BeatLeader CIS TOP';
 
 // !bsr [mapid]
@@ -59,10 +59,14 @@ var task = cron.schedule("*/5 * * * *", async function () {
 	TimeFrom = LastCheck.getTime()/ 1000 | 0;
 	TimeTo = NewCheck.getTime()/ 1000 | 0;
 	
-	for(var i = 0; i < PlayersDataText.length; i++) {	
-		console.log("Looking for scores for a player " + (i+1) + " of " + PlayersDataText.length + ": " + PlayersDataText[i].blUserID);
-		await DrawScore(PlayersDataText[i].blUserID);	
-	}
+	for (var i = 0; i < PlayersDataText.length; i++) {    
+        console.log("Looking for scores for a player " + (i+1) + " of " + PlayersDataText.length + ": " + PlayersDataText[i].userID + " (" + PlayersDataText[i].platform + ")");
+        if (PlayersDataText[i].platform === "BL") {
+            await DrawScore(PlayersDataText[i].userID);    
+        } else if (PlayersDataText[i].platform === "SS") {
+            await DrawScoreOnSS(PlayersDataText[i].userID); // Новая функция для ScoreSaber
+        }
+    }
 	
 	LastCheck = addSeconds(NewCheck,1);
 
@@ -108,21 +112,21 @@ client.once('ready', () => {
 	console.log("");
 	
 	try {
-		PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
-	} catch (error) {
-		console.log("playersdata.json not found... create new");
-		let NewFile = [ { blUserID: "123456789" } ];
-		fs.writeFileSync('playersdata.json', JSON.stringify(NewFile));
-	}
-		
-	PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
-	PlayersDataText = JSON.parse(PlayersDataJSON);
-	if (PlayersDataText.length>0) { 
-		console.log("Founded " + PlayersDataText.length + " players:");
-		for(var i = 0; i < PlayersDataText.length; i++) {	
-				console.log(PlayersDataText[i].blUserID);
-		}
-	}	
+        PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
+    } catch (error) {
+        console.log("playersdata.json not found... create new");
+        let NewFile = [{ userID: "76561198108258623", platform: "SS" }]; // Дефолт для ScoreSaber
+        fs.writeFileSync('playersdata.json', JSON.stringify(NewFile));
+    }
+        
+    PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
+    PlayersDataText = JSON.parse(PlayersDataJSON);
+    if (PlayersDataText.length > 0) { 
+        console.log("Founded " + PlayersDataText.length + " players:");
+        for (var i = 0; i < PlayersDataText.length; i++) {    
+            console.log(`${PlayersDataText[i].userID} (${PlayersDataText[i].platform})`);
+        }
+    }
 
 	console.log("");
 
@@ -160,18 +164,60 @@ client.on("messageCreate", async function(message) {
 
 	let REQ_CHANNEL_ID = message.channel.id;
 
-	// chat bot response when it receives a ping
-	// try 
-	// {
-	// 	let user = message.mentions.users.first();
-	// 	if ((user != undefined) && (user.id === config.clientId)) {
-	// 		let emoji = [ ":heart:", ":broken_heart:"];
-	// 		client.channels.fetch(REQ_CHANNEL_ID)
-	// 		.then(channel=> channel.send("<@" + message.author.id + ">, " + emoji[getRandomInt(2)]));
-	// 	}
-	// } catch (error) {
-	// 	console.log("Something happend!");
-	// }
+
+
+// chat bot response when it receives a ping
+/*
+try {
+  let user = message.mentions.users.first();
+  if ((user != undefined) && (user.id === config.clientId)) {
+    let ebalo = "завали ебало";
+    client.channels.fetch(REQ_CHANNEL_ID)
+      .then(channel => channel.send(ebalo));
+		let user = message.author;
+    // Получаем объект GuildMember для упомянутого пользователя
+    let member = message.guild.members.cache.get(user.id);
+    if (member) {
+      // Замените 'MUTED_ROLE_ID' на реальный ID роли Muted
+      let mutedRole = message.guild.roles.cache.find(role => role.name === 'Muted');
+      if (mutedRole) {
+        // Добавляем роль Muted
+        member.roles.add(mutedRole)
+          .then(() => {
+            console.log(`Роль Muted добавлена пользователю ${user.tag}`);
+
+            // Удаляем роль через 10 минут
+            setTimeout(() => {
+              member.roles.remove(mutedRole)
+                .then(() => console.log(`Роль Muted удалена у пользователя ${user.tag}`))
+                .catch(err => console.error('Ошибка при удалении роли:', err));
+            }, 1 * 60 * 1000); // 10 минут в миллисекундах
+          })
+          .catch(err => console.error('Ошибка при добавлении роли:', err));
+      } else {
+        console.error('Роль Muted не найдена');
+      }
+    } else {
+      console.error('Пользователь не найден в guild members');
+    }
+  }
+} catch (error) {
+  console.error('Ошибка:', error);
+}
+*/
+
+try {
+    const user = message.mentions.users.first();
+    if (user && user.id === config.clientId) {
+        const replyMessage = "Завали ебало";
+        message.channel.send(replyMessage)
+            .then(() => console.log(`Ответил на пинг от ${message.author.tag}`))
+            .catch(err => console.error('Ошибка при отправке сообщения:', err));
+    }
+} catch (error) {
+    console.error('Ошибка при обработке пинга:', error);
+}
+
 
 	if (!message.content.startsWith(prefix)) return;
 
@@ -192,142 +238,169 @@ client.on("messageCreate", async function(message) {
 });
 
 client.on('interactionCreate', async interaction => {
-	var cancelProcess = false;
-	
-	if (!interaction.isCommand()) return;
+    var cancelProcess = false;
+    
+    if (!interaction.isCommand()) return;
 
-	const { commandName } = interaction;
+    const { commandName } = interaction;
 
-	if (commandName === 'link') {
+    if (commandName === 'link') {
+        var userID = interaction.options.getString('userid');
+        var platform = interaction.options.getString('platform'); // Требуется добавить опцию в slash-команду
 
-		var userID = interaction.options.getString('userid');
-
-        if(isNaN(userID)) {
-            await interaction.reply({ content: `That is not a valid ID!`, ephemeral: true });
-			cancelProcess = true;
+        if (!userID || !platform || (platform !== "BL" && platform !== "SS")) {
+            await interaction.reply({ content: `Invalid ID or platform! Use "BL" for BeatLeader or "SS" for ScoreSaber.`, ephemeral: true });
+            cancelProcess = true;
         }
 
-		PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
-		PlayersDataText = JSON.parse(PlayersDataJSON);
+        if (!cancelProcess) {
+            PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
+            PlayersDataText = JSON.parse(PlayersDataJSON);
 
-		if (PlayersDataText.length>0) { 
-			for(var i = 0; i < PlayersDataText.length; i++) {	
-				if(PlayersDataText[i].blUserID == userID) {
-					await interaction.reply({ content: `That account is already linked!`, ephemeral: true });
-					cancelProcess = true;
-				}
-			}	
-		}
+            if (PlayersDataText.length > 0) { 
+                for (var i = 0; i < PlayersDataText.length; i++) {    
+                    if (PlayersDataText[i].userID == userID && PlayersDataText[i].platform == platform) {
+                        await interaction.reply({ content: `That account is already linked for ${platform}!`, ephemeral: true });
+                        cancelProcess = true;
+                        break; // Выходим из цикла, если нашли совпадение
+                    }
+                }    
+            }
 
-		if (!cancelProcess) {
+            if (!cancelProcess) {
+                await interaction.deferReply();
 
-			await interaction.deferReply();
+                let url = platform === "BL" ? `${BLAPI_URL}/player/${userID}` : `https://scoresaber.com/api/player/${userID}/full`;
 
-			let url = BLAPI_URL + "/player/" + userID;
+                await fetch(url, { method: "GET" })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        console.log("Error: " + response.status);
+                        cancelProcess = true;
+                    }
+                })
+                .then(async (json) => {    
+                    if (json && json.name != undefined) {
+                        console.log("Account found!");
+                    } else {
+                        throw new Error("No name in response");
+                    }
+                })
+                .catch(async (error) => {
+                    console.log("Account does not exist: " + error);
+                    await interaction.editReply({ content: `Account does not exist on ${platform}!`, ephemeral: true });
+                    console.log("");
+                    cancelProcess = true;
+                });
 
-			await fetch(url, { method: "GET" })
-			.then((response) => {
-				if (response.ok) {
-					return response.json();
-				} else {
-					console.log("Error: " + response.status);
-					cancelProcess = true;
-				}
-			})
-			.then(async (json) => {	
-				if (json.name != undefined) console.log("Account found!");
-			})
-			.catch(async (error) => {
-				console.log("Account does not exist!");
-				await interaction.editReply({ content: `Account does not exist!`, ephemeral: true });
-				console.log("");
-				cancelProcess = true;
-			});
+                if (!cancelProcess) {
+                    await waitUntil(() => !working, { timeout: Infinity });
 
-			if (!cancelProcess) {
-			
-				await waitUntil(() => !working, { timeout : Infinity });
+                    console.log("");    
+                    console.log("Stop monitoring!");
+                    console.log("");
 
-				console.log("");	
-				console.log("Stop monitoring!");
-				console.log("");
+                    task.stop();
 
-				task.stop();
+                    var NewPlayer = { userID: userID, platform: platform };
 
-				var NewPlayer = { blUserID: userID };
+                    try {
+                        PlayersDataText.push(NewPlayer);
+                        fs.writeFileSync('playersdata.json', JSON.stringify(PlayersDataText));
+                        console.log(`Account ${userID} has been linked for ${platform}!`);
+                        await interaction.editReply({ content: `Account ${userID} has been linked for ${platform}!`, ephemeral: true });
+                    } catch (error) {
+                        console.log("Account adding error: " + error);
+                        await interaction.editReply({ content: `Account adding error`, ephemeral: true });
+                    }
+                    
+                    console.log("");    
+                    console.log("Start monitoring!");
+                    console.log("");
 
-				try {
-					PlayersDataText.push(NewPlayer);
-					fs.writeFileSync('playersdata.json', JSON.stringify(PlayersDataText));
-					console.log("Account " + userID + " has been linked!");
-					await interaction.editReply({ content: `Account ${userID} has been linked!`, ephemeral: true });
-				} catch (error) {
-					console.log("Account adding error!");
-					await interaction.editReply({ content: `Account adding error`, ephemeral: true });
-				}
-				
-				console.log("");	
-				console.log("Start monitoring!");
-				console.log("");
-
-				task.start();
-			}
-		}
-
-	} else if(commandName === 'unlink') {
-		
-		var userID = interaction.options.getString('userid');
-
-        if(isNaN(userID)) {
-            await interaction.reply({ content: `That is not a valid ID!`, ephemeral: true });
-            return;
+                    task.start();
+                }
+            }
         }
 
-		PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
-		PlayersDataText = JSON.parse(PlayersDataJSON);
+	} else if (commandName === 'unlink') {
+    const userID = interaction.options.getString('userid');
+    const platform = interaction.options.getString('platform');
 
-		let userexists = false;
-		if (PlayersDataText.length>0) { 
-			for(var i = 0; i < PlayersDataText.length; i++) {	
-				if(PlayersDataText[i].blUserID == userID) userexists = true;
-			}	
-		}
+    // Проверка валидности входных данных
+    if (!userID || !platform || !['BL', 'SS'].includes(platform)) {
+        return await interaction.reply({ 
+            content: 'Неверный ID или платформа! Используйте "BL" для BeatLeader или "SS" для ScoreSaber.', 
+            ephemeral: true 
+        });
+    }
 
-		if (!userexists) {
-			await interaction.reply({ content: `Account with this ID not found!`, ephemeral: true });
-			return;
-		}
+    // Чтение данных из файла
+    let PlayersDataText;
+    try {
+        PlayersDataJSON = fs.readFileSync('playersdata.json', 'utf8');
+        PlayersDataText = JSON.parse(PlayersDataJSON);
+    } catch (error) {
+        console.log('Ошибка чтения playersdata.json, создание пустого списка:', error);
+        PlayersDataText = [];
+    }
 
-		await interaction.deferReply();
-		await waitUntil(() => !working, { timeout : Infinity });
+    // Поиск записи с учётом userID и platform
+    let userExists = false;
+    let userIndex = -1;
+    if (PlayersDataText.length > 0) {
+        for (let i = 0; i < PlayersDataText.length; i++) {
+            if (PlayersDataText[i].userID === userID && PlayersDataText[i].platform === platform) {
+                userExists = true;
+                userIndex = i;
+                break; // Выходим из цикла, как только нашли совпадение
+            }
+        }
+    }
 
-		console.log("");	
-		console.log("Stop monitoring!");
-		console.log("");
+    // Если запись не найдена
+    if (!userExists) {
+        await interaction.reply({ 
+            content: `Аккаунт с ID ${userID} не найден для ${platform}!`, 
+            ephemeral: true 
+        });
+        return;
+    }
 
-		task.stop();
+    // Отложенный ответ
+    await interaction.deferReply({ ephemeral: true });
 
-		if (PlayersDataText.length>0) { 
-			for(var i = 0; i < PlayersDataText.length; i++) {	
-				if(PlayersDataText[i].blUserID == userID) {
-					try {
-						PlayersDataText.splice(i, 1);
-						fs.writeFileSync('playersdata.json', JSON.stringify(PlayersDataText));
-						console.log("Account " + userID + " has been unlinked!");
-						await interaction.editReply({ content: `Account ${userID} has been unlinked!`, ephemeral: true });
-					} catch (error) {
-						console.log("Account unlink error!");
-						await interaction.editReply({ content: `Account unlink error!`, ephemeral: true });
-					}
-				}	
-			}
-		}
+    // Ожидание завершения работы и остановка мониторинга
+    await waitUntil(() => !working, { timeout: Infinity });
+    console.log("");	
+    console.log("Stop monitoring!");
+    console.log("");
+    task.stop();
 
-		console.log("");	
-		console.log("Start monitoring!");
-		console.log("");
-		
-		task.start();
+    // Удаление записи
+    try {
+        PlayersDataText.splice(userIndex, 1);
+        fs.writeFileSync('playersdata.json', JSON.stringify(PlayersDataText, null, 2));
+        console.log(`Account ${userID} has been unlinked from ${platform}!`);
+        await interaction.editReply({ 
+            content: `Аккаунт ${userID} успешно отвязан от ${platform}!`, 
+            ephemeral: true 
+        });
+    } catch (error) {
+        console.log("Account unlink error:", error);
+        await interaction.editReply({ 
+            content: `Ошибка при отвязке аккаунта ${userID} от ${platform}!`, 
+            ephemeral: true 
+        });
+    }
+
+    // Возобновление мониторинга
+    console.log("");	
+    console.log("Start monitoring!");
+    console.log("");
+    task.start();
 			
 	} else if(commandName === 'bsr') {
 
@@ -550,6 +623,199 @@ async function DrawScore(userID) {
 	}
 }
 
+async function DrawScoreOnSS(userID) {
+
+    var scores = {
+        playername: "", mapname: "", rank: "", pp: "", accuracy: "", difficulty: "",
+        mapcoverurl: "", avatar: "", mapurl: "", songauthor: "", subName: "", modifiers: "", mapper: ""
+    };
+	
+	let headset = "Unknown";
+
+    for (let key in scores) {
+        scores[key] = "";
+    }
+
+    if (userID != undefined) {
+        let cancelProcess = false;
+        
+        let url = `https://scoresaber.com/api/player/${userID}/full`;
+        await fetch(url, { method: "GET" })
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                console.log("Error: " + response.status);
+                cancelProcess = true;
+            }
+        })
+        .then(async (json) => {    
+            if (json != undefined) {
+                try {                    
+                    scores.playername = json.name;
+                    scores.avatar = json.profilePicture;
+					headset = gethmd(json.deviceHmd);
+                    console.log("Player : " + scores.playername);
+                } catch (error) {
+                    console.log(error);
+                    cancelProcess = true;
+                } 
+            } else {
+                console.log("Failed get JSON");
+                console.log("");
+                cancelProcess = true;
+            }
+        })
+        .catch(error => console.log(error));
+
+        if (!cancelProcess) {
+            let url2 = `https://scoresaber.com/api/player/${userID}/scores?limit=10&sort=recent`;
+            await fetch(url2, { method: "GET" })
+            .then((response) => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    console.log("Error: " + response.status);
+                }
+            })
+            .then(async (json) => {            
+                if (json != undefined && json.playerScores) {
+                    try {
+                        let check = json.playerScores[0]?.score.rank; 
+                        
+                        for (var i = 0; i < json.playerScores.length; i++) {
+                            var weightnum;
+                            var ranknum;
+                            var post;
+                            var ppnum;
+                            var fullCombo = false;
+
+                            const leaderboard = json.playerScores[i].leaderboard;
+                            const score = json.playerScores[i].score;
+							
+							// Фильтрация по времени
+							
+                                const scoreTime = new Date(score.timeSet).getTime() / 1000; // Время скора в секундах
+                                if (scoreTime < TimeFrom || scoreTime > TimeTo) {
+                                    //console.log(`Score ${scores.songauthor} - ${scores.mapname} outside time range (${score.timeSet})`);
+                                    continue; // Пропускаем скор, если он вне диапазона
+                                }
+								
+								// Фильтрация только рейтинговых карт (pp > 0)
+                                const ppValue = score.pp || 0;
+                                if (ppValue <= 0) {
+                                    //console.log(`Score ${leaderboard.songAuthorName} - ${leaderboard.songName} is not ranked (pp: ${ppValue})`);
+                                    continue;
+                                }
+
+                            scores.mapname = leaderboard.songName;
+                            scores.songauthor = leaderboard.songAuthorName;
+                            scores.rank = "#" + score.rank;
+                            scores.pp = rounded(score.pp) + " (" + rounded(score.pp * score.weight) + ")";
+                            scores.accuracy = rounded((score.baseScore / leaderboard.maxScore) * 100) + "%";
+                            scores.difficulty = getDifficultyName(leaderboard.difficulty.difficulty);
+                            scores.mapcoverurl = leaderboard.coverImage;
+                            scores.mapurl = `https://scoresaber.com/leaderboard/${leaderboard.id}`;
+                            scores.subName = leaderboard.songSubName;
+                            scores.modifiers = score.modifiers || "";
+							scores.mapper = leaderboard.levelAuthorName;
+							
+							const headset = score.deviceHmd !== undefined && score.deviceHmd !== null ? gethmd(score.deviceHmd) : "Unknown"; // Извлекаем для каждого скора
+                            //console.log("Raw deviceHmd value: " + score.deviceHmd);
+
+                            weightnum = score.weight || 0;
+                            ranknum = score.rank;
+                            ppnum = score.pp;
+
+                            console.log("Find score: " + scores.songauthor + " - " + scores.mapname + " " + scores.subName);
+                            console.log("Analyzing...");
+
+                            post = false;
+                            if (ranknum <= POST_RANK_10 && ppnum > 0) post = true;
+                            if (weightnum >= WEIGHT_TOP_8) post = true;
+                            if (ranknum <= POST_RANK_100 && weightnum >= WEIGHT_TOP_20) post = true;
+                            
+                            if (post) {
+                                console.log("Pepechad! Drawing card...");
+
+                                let embedcolor = '#ffaa00';
+                                let url3 = `https://scoresaber.com/u/${userID}`;
+                                
+                                if (scores.modifiers != "") scores.accuracy = scores.accuracy + " (" + scores.modifiers + ")";
+								
+								fullCombo = score.fullCombo;
+								const badCuts = score.badCuts;
+								const missedNotes = score.missedNotes;
+
+                                try {
+                                    let fields;
+                                    if (fullCombo === true) {
+                                        fields = {
+                                            Leaderboard: bold("Leaderboard:　") + 'ScoreSaber',
+											Headset: bold("Headset:　") + score.deviceHmd,
+                                            Rank: bold("Rank:　") + scores.rank,
+                                            PP: bold("PP:　") + scores.pp,
+                                            Accuracy: bold("Accuracy:　") + scores.accuracy + " FC",
+                                            Difficulty: bold("Difficulty:　") + scores.difficulty,
+                                        };
+                                    } else {
+                                        fields = {
+                                            Leaderboard: bold("Leaderboard:　") + 'ScoreSaber',
+											Headset: bold("Headset:　") + score.deviceHmd,
+                                            Rank: bold("Rank:　") + scores.rank,
+                                            PP: bold("PP:　") + scores.pp,
+                                            Accuracy: bold("Accuracy:　") + scores.accuracy,
+                                            Difficulty: bold("Difficulty:　") + scores.difficulty,
+											BadCuts: bold("Bad Cuts:　") + badCuts,
+											MissedNotes: bold("Missed Notes:　") + missedNotes,
+                                        };
+                                    }
+
+                                    const EmbedCard = new EmbedBuilder()                        
+                                        .setColor(embedcolor)
+                                        .setTitle(scores.songauthor + " - " + scores.mapname + " " + scores.subName)
+                                        .setURL(scores.mapurl)
+                                        .setAuthor({ name: scores.playername, iconURL: scores.avatar, url: url3 })
+                                        .setThumbnail(scores.mapcoverurl)
+										.setFooter({ text: scores.mapper })
+                                        .addFields({ name: '\u200B', value: Object.values(fields).join('\n'), inline: true });
+                
+                                    client.channels.fetch(SCORES_CHANNEL_ID)
+                                        .then(channel => channel.send({ embeds: [EmbedCard] }));
+                
+                                    console.log("Done!");
+                                    console.log("");
+                
+                                } catch (error) {
+                                    console.log(error);
+                                } 
+                            } else {
+                                console.log("Not pepechad!"); 
+                                console.log("");
+                            }
+                        }
+                    } catch (error) {
+                        console.log("No new scores found");
+                        console.log("");
+                    }
+                } else {
+                    console.log("Failed get JSON");
+                }
+            })
+            .catch(error => console.log(error));
+        }    
+    }
+}
+function getDifficultyName(difficulty) {
+    switch (difficulty) {
+        case 1: return "Easy";
+        case 3: return "Normal";
+        case 5: return "Hard";
+        case 7: return "Expert";
+        case 9: return "Expert+";
+        default: return "Unknown";
+    }
+}
 async function DrawMap(mapcode, REQ_CHANNEL_ID) {	
 
 	var mapinfo = {
