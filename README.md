@@ -14,8 +14,8 @@ Also bot can monitoring change ranking of top N players of county or some countr
 
 ## General slash commands:
 
-- `/link [userid]` -> link a player's account to monitoring.
-- `/unlink [userid]` -> unlink a player's account from monitoring.
+- `/link [userid][platform]` -> link a player's account to monitoring on a specific platform (BL or SS).
+- `/unlink [userid][platform]` -> unlink a player's account from monitoring on a specific platform (BL or SS). Requires restart to save changes.
 - `/bsr [mapcode]` -> show map details from a BeatSaber. 
 
 ### Other commands:
